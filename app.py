@@ -22,8 +22,10 @@ from flask_cors import CORS
 
 from utils.utils import *
 from utils import chatbot
+from utils.news_manager import news_manager
 
 import os
+import json
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -276,6 +278,65 @@ def logout():
     # Clear the authenticated status from the session
     session.pop('authenticated', None)
     return redirect(url_for('index'))
+
+
+# News routes
+@app.route('/news')
+@login_required
+def news_dashboard():
+    """News dashboard page"""
+    return render_template('news.html')
+
+
+@app.route('/api/news')
+@login_required
+def get_news():
+    """API endpoint to get news articles"""
+    category = request.args.get('category')
+    count = int(request.args.get('count', 20))
+    
+    news = news_manager.get_news(category=category, count=count)
+    return jsonify(news)
+
+
+@app.route('/api/news/summary')
+@login_required
+def get_news_summary():
+    """API endpoint to get news summary"""
+    summary = news_manager.get_news_summary()
+    return jsonify(summary)
+
+
+@app.route('/api/news/refresh')
+@login_required
+def refresh_news():
+    """API endpoint to manually refresh news cache"""
+    news_manager.update_news_cache()
+    return jsonify({'status': 'success', 'message': 'News cache updated'})
+
+
+@app.route('/api/news/sources')
+@login_required
+def get_news_sources():
+    """API endpoint to get configured news sources"""
+    return jsonify(news_manager.news_sources)
+
+
+@app.route('/api/news/sources', methods=['POST'])
+@login_required
+def update_news_sources():
+    """API endpoint to update news sources configuration"""
+    try:
+        new_sources = request.json
+        news_manager.news_sources = new_sources
+        
+        # Save to file
+        with open('news_sources.json', 'w') as f:
+            json.dump(new_sources, f, indent=2)
+        
+        return jsonify({'status': 'success', 'message': 'News sources updated'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 
 # run server

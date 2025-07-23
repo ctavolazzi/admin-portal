@@ -19,3 +19,12 @@ docx2txt
 tqdm
 python-dotenv
 waitress
+# News and real-time data dependencies
+feedparser
+praw
+tweepy
+flask-socketio
+schedule
+newsapi-python
+yfinance
+alpha-vantage

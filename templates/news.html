@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Dashboard - Admin Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='news_style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">
+            <i class="fas fa-newspaper"></i>
+            News Dashboard
+        </h1>
+        <div class="header-container">
+            <a href="/dashboard" class="header-link">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/chatbot" class="header-link">
+                <i class="fas fa-robot"></i> Chatbot
+            </a>
+            <a href="/logout" class="header-link">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- News Summary Cards -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="summary-content">
+                    <h3 id="total-articles">0</h3>
+                    <p>Total Articles</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="summary-content">
+                    <h3 id="last-update">--</h3>
+                    <p>Last Update</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div class="summary-content">
+                    <h3 id="categories-count">0</h3>
+                    <p>Categories</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="summary-content">
+                    <button id="refresh-btn" class="refresh-button">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <div class="filter-controls">
+                <select id="category-filter" class="filter-select">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="source-filter" class="filter-select">
+                    <option value="">All Sources</option>
+                </select>
+                <input type="text" id="search-input" class="search-input" placeholder="Search articles...">
+            </div>
+            <div class="view-controls">
+                <button id="grid-view" class="view-btn active">
+                    <i class="fas fa-th"></i> Grid
+                </button>
+                <button id="list-view" class="view-btn">
+                    <i class="fas fa-list"></i> List
+                </button>
+            </div>
+        </div>
+
+        <!-- News Articles -->
+        <div class="news-container" id="news-container">
+            <div class="loading-spinner" id="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading news...</p>
+            </div>
+        </div>
+
+        <!-- Load More Button -->
+        <div class="load-more-section">
+            <button id="load-more-btn" class="load-more-btn" style="display: none;">
+                <i class="fas fa-plus"></i> Load More Articles
+            </button>
+        </div>
+    </div>
+
+    <!-- News Sources Modal -->
+    <div id="sources-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configure News Sources</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="sources-section">
+                    <h3>RSS Feeds</h3>
+                    <div id="rss-feeds-list"></div>
+                    <button id="add-rss-feed" class="add-source-btn">
+                        <i class="fas fa-plus"></i> Add RSS Feed
+                    </button>
+                </div>
+                <div class="sources-section">
+                    <h3>Reddit Subreddits</h3>
+                    <div id="reddit-subreddits-list"></div>
+                    <button id="add-reddit-subreddit" class="add-source-btn">
+                        <i class="fas fa-plus"></i> Add Subreddit
+                    </button>
+                </div>
+                <div class="sources-section">
+                    <h3>News Categories</h3>
+                    <div id="news-categories-list"></div>
+                    <button id="add-news-category" class="add-source-btn">
+                        <i class="fas fa-plus"></i> Add Category
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-sources" class="save-btn">Save Changes</button>
+                <button id="cancel-sources" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2023 Admin Portal. All rights reserved.</p>
+            <ul class="footer-menu">
+                <li><a href="https://github.com/madhav-mknc/admin-portal">Github</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='news.js') }}"></script>
+</body>
+</html>

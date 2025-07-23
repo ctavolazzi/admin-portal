@@ -1,0 +1,22 @@
+{
+  "rss_feeds": [
+    {
+      "name": "TechCrunch",
+      "url": "https://techcrunch.com/feed/",
+      "category": "technology"
+    },
+    {
+      "name": "BBC News",
+      "url": "http://feeds.bbci.co.uk/news/rss.xml",
+      "category": "general"
+    }
+  ],
+  "reddit_subreddits": [
+    "technology",
+    "programming"
+  ],
+  "news_categories": [
+    "technology",
+    "business"
+  ]
+}
