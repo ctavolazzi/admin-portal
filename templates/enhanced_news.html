@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Enhanced News Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_news.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">🚀 News Intelligence Platform</h1>
+        <div class="header-controls">
+            <button id="refreshBtn" class="btn-primary">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <a href="/dashboard" class="btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Search & Filter Section -->
+        <div class="search-section">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search articles by keyword..." />
+                <button id="searchBtn" class="btn-search">Search</button>
+            </div>
+
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="technology">Technology</option>
+                    <option value="business">Business</option>
+                    <option value="science">Science</option>
+                    <option value="programming">Programming</option>
+                    <option value="cryptocurrency">Cryptocurrency</option>
+                </select>
+
+                <select id="sourceFilter">
+                    <option value="">All Sources</option>
+                    <option value="hackernews">Hacker News</option>
+                    <option value="guardian">The Guardian</option>
+                    <option value="github">GitHub Trending</option>
+                    <option value="coingecko">CoinGecko</option>
+                </select>
+
+                <input type="date" id="dateFilter" />
+                <button id="clearFilters" class="btn-clear">Clear</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Quick Stats -->
+            <div class="widget stats-widget">
+                <h3><i class="fas fa-chart-line"></i> Quick Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalArticles">-</div>
+                        <div class="stat-label">Total Articles</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalSources">-</div>
+                        <div class="stat-label">Active Sources</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="lastUpdate">-</div>
+                        <div class="stat-label">Last Update</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Topics -->
+            <div class="widget topics-widget">
+                <h3><i class="fas fa-tags"></i> My Topics</h3>
+                <div class="topic-controls">
+                    <button id="addTopicBtn" class="btn-primary btn-small">
+                        <i class="fas fa-plus"></i> Add Topic
+                    </button>
+                </div>
+                <div id="topicsList" class="topics-list">
+                    <!-- Topics will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Trending Topics -->
+            <div class="widget trending-widget">
+                <h3><i class="fas fa-fire"></i> Trending Now</h3>
+                <div id="trendingTopics" class="trending-list">
+                    <!-- Trending topics will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Analytics Chart -->
+            <div class="widget chart-widget">
+                <h3><i class="fas fa-chart-pie"></i> Source Distribution</h3>
+                <canvas id="sourceChart"></canvas>
+            </div>
+
+            <!-- Sentiment Analysis -->
+            <div class="widget sentiment-widget">
+                <h3><i class="fas fa-smile"></i> Sentiment Analysis</h3>
+                <div class="sentiment-bars">
+                    <div class="sentiment-bar">
+                        <span class="sentiment-label positive">Positive</span>
+                        <div class="sentiment-progress">
+                            <div class="sentiment-fill positive" id="positiveBar"></div>
+                        </div>
+                        <span class="sentiment-value" id="positiveValue">0%</span>
+                    </div>
+                    <div class="sentiment-bar">
+                        <span class="sentiment-label neutral">Neutral</span>
+                        <div class="sentiment-progress">
+                            <div class="sentiment-fill neutral" id="neutralBar"></div>
+                        </div>
+                        <span class="sentiment-value" id="neutralValue">0%</span>
+                    </div>
+                    <div class="sentiment-bar">
+                        <span class="sentiment-label negative">Negative</span>
+                        <div class="sentiment-progress">
+                            <div class="sentiment-fill negative" id="negativeBar"></div>
+                        </div>
+                        <span class="sentiment-value" id="negativeValue">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Articles Section -->
+        <div class="articles-section">
+            <div class="section-header">
+                <h2><i class="fas fa-newspaper"></i> Latest Articles</h2>
+                <div class="view-controls">
+                    <button id="gridViewBtn" class="view-btn active">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button id="listViewBtn" class="view-btn">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="articlesContainer" class="articles-grid">
+                <!-- Articles will be loaded here -->
+            </div>
+
+            <div id="loadingIndicator" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading articles...
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Topic Modal -->
+    <div id="addTopicModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Custom Topic</h2>
+            <form id="addTopicForm">
+                <div class="form-group">
+                    <label for="topicName">Topic Name:</label>
+                    <input type="text" id="topicName" required placeholder="e.g., AI Research">
+                </div>
+                <div class="form-group">
+                    <label for="topicKeywords">Keywords (comma-separated):</label>
+                    <input type="text" id="topicKeywords" required placeholder="artificial intelligence, machine learning, neural networks">
+                </div>
+                <div class="form-group">
+                    <label for="topicSources">Preferred Sources:</label>
+                    <select id="topicSources" multiple>
+                        <option value="hackernews">Hacker News</option>
+                        <option value="guardian">The Guardian</option>
+                        <option value="github">GitHub Trending</option>
+                        <option value="coingecko">CoinGecko</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="topicPriority">Priority:</label>
+                    <select id="topicPriority">
+                        <option value="1.0">High</option>
+                        <option value="0.8">Medium</option>
+                        <option value="0.6">Low</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Create Topic</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='enhanced_news.js') }}"></script>
+</body>
+</html>

@@ -4,25 +4,26 @@
 
 
 from flask import (
-    Flask, 
+    Flask,
     render_template,
     request,
-    redirect, 
-    url_for, 
-    session, 
-    flash, 
+    redirect,
+    url_for,
+    session,
+    flash,
     jsonify
 )
 from werkzeug.utils import secure_filename
 from functools import wraps
 from waitress import serve
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 # from google_auth_oauthlib.flow import Flow
 
-from utils.utils import *
-from utils import chatbot
-from utils.news_manager import news_manager
+from utils.enhanced_news_manager import enhanced_news_manager
+from utils.file_utils import allowed_file, is_authenticated, handle_urls
+import hashlib
 
 import os
 import json
@@ -32,12 +33,21 @@ load_dotenv()
 # Initialzing flask app
 app = Flask(__name__)
 
-# Enable CORS
-CORS(app)
+# Enable CORS (restrict to configured origins)
+CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "http://localhost:8080,http://127.0.0.1:8080").split(",")}})
+
+# CSRF protection
+csrf = CSRFProtect(app)
+app.jinja_env.globals['csrf_token'] = generate_csrf
 
 # secret key
 app.secret_key = os.getenv("FLASK_SECRET_KEY")  # Change this to a strong random key in a production environment
 # app.secret_key = str(unique_id()).replace("-","")
+
+# Secure cookie/session settings
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
 
 # server address
 HOST = "0.0.0.0"
@@ -108,11 +118,11 @@ def index():
 def login():
     if session.get('authenticated'):
         return redirect(url_for("dashboard"))
-    
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+
         if is_authenticated(username, password):
             # Save the authenticated status in the session
             session['authenticated'] = True
@@ -131,7 +141,11 @@ def dashboard():
     if not session.get('authenticated'):
         return redirect(url_for('login'))
 
-    files = list_stored_files()
+    # Simple file listing - no AI database needed
+    upload_dir = "uploads"
+    files = []
+    if os.path.exists(upload_dir):
+        files = [f for f in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, f))]
     return render_template('dashboard.html', files=files)
 
 
@@ -141,23 +155,20 @@ def dashboard():
 def upload():
     if request.method == 'POST':
         files = request.files.getlist('file')
-        
+
         if not files:
             flash('No files selected')
             return redirect(url_for('dashboard'))
 
+        # Create uploads directory if it doesn't exist
+        upload_dir = "uploads"
+        os.makedirs(upload_dir, exist_ok=True)
+
         for file in files:
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                file.save(filename)
-
-                status = upload_file_to_pinecone(filename)
-                if os.path.exists(filename):
-                    os.remove(filename)
-                if status != "ok":
-                    flash('Upload Limit Reached')
-                    flash(status)
-                    return redirect(url_for('dashboard'))
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
             else:
                 flash('Invalid file type')
                 return redirect(url_for('dashboard'))
@@ -236,40 +247,22 @@ def handle_url():
     return redirect(url_for('dashboard'))
 
 
-# delete an uploaded file  
-# @app.route('/delete/<filename>', methods=['POST'])
-@app.route('/delete/<path:filename>')
+# delete an uploaded file
+@app.route('/delete/<path:filename>', methods=['POST'])
 @login_required
 def delete(filename):
-    delete_file_from_pinecone(filename)
-    flash('File deleted successfully')
+    # Simple file deletion from uploads directory
+    upload_dir = "uploads"
+    file_path = os.path.join(upload_dir, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        flash('File deleted successfully')
+    else:
+        flash('File not found')
     return redirect(url_for('dashboard'))
 
 
-# get response from chatbot
-@app.route('/get_chat_response', methods=['POST'])
-def get_chat_response():
-    user_input = request.json['message']
-    chat_history = request.json['conversationHistory']
-
-    # truncate the chat_history
-    chat_history.reverse()
-    conversation = []
-    for chat in chat_history:
-        if len(str(conversation)) > 2000: # 2000 characters is the currect limit
-            break 
-        conversation.append(chat)
-    chat_history = conversation[::-1]
-    # for i in chat_history:
-    #     print(i)
-
-    response = chatbot.get_response(query=user_input, chat_history=chat_history)
-    return jsonify({'message': response})
-
-# chatbot
-@app.route('/chatbot')
-def chat():
-    return render_template('chat.html')
+# Chatbot functionality removed - no longer using AI dependencies
 
 
 # logout
@@ -284,64 +277,213 @@ def logout():
 @app.route('/news')
 @login_required
 def news_dashboard():
-    """News dashboard page"""
+    """Enhanced news intelligence dashboard"""
+    return render_template('enhanced_news.html')
+
+@app.route('/news/legacy')
+@login_required
+def legacy_news_dashboard():
+    """Legacy news dashboard page"""
     return render_template('news.html')
 
 
 @app.route('/api/news')
 @login_required
 def get_news():
-    """API endpoint to get news articles"""
+    """API endpoint to get news articles with enhanced features"""
     category = request.args.get('category')
+    source = request.args.get('source')
     count = int(request.args.get('count', 20))
-    
-    news = news_manager.get_news(category=category, count=count)
+
+    # Enhanced filtering
+    filters = {}
+    if category:
+        filters['category'] = category
+    if source:
+        filters['source'] = source
+
+    if filters:
+        # Use enhanced search if filters applied
+        news = enhanced_news_manager.search_articles("", filters)[:count]
+    else:
+        news = enhanced_news_manager.news_cache[:count]
+
     return jsonify(news)
 
 
 @app.route('/api/news/summary')
 @login_required
 def get_news_summary():
-    """API endpoint to get news summary"""
-    summary = news_manager.get_news_summary()
+    """API endpoint to get enhanced news summary"""
+    summary = {
+        'total_articles': len(enhanced_news_manager.news_cache),
+        'last_update': enhanced_news_manager.last_update.isoformat() if enhanced_news_manager.last_update else None,
+        'sources': list(set(article.get('api_source', 'unknown') for article in enhanced_news_manager.news_cache)),
+        'categories': list(set(article.get('category', 'general') for article in enhanced_news_manager.news_cache)),
+        'user_topics': list(enhanced_news_manager.user_topics.keys())
+    }
     return jsonify(summary)
 
 
-@app.route('/api/news/refresh')
+@app.route('/api/news/refresh', methods=['GET', 'POST'])
 @login_required
 def refresh_news():
-    """API endpoint to manually refresh news cache"""
-    news_manager.update_news_cache()
-    return jsonify({'status': 'success', 'message': 'News cache updated'})
+    """API endpoint to manually refresh enhanced news cache"""
+    enhanced_news_manager.update_enhanced_cache()
+    return jsonify({'status': 'success', 'message': 'Enhanced news cache updated'})
 
 
 @app.route('/api/news/sources')
 @login_required
 def get_news_sources():
-    """API endpoint to get configured news sources"""
-    return jsonify(news_manager.news_sources)
+    """API endpoint to get available news sources"""
+    sources = {
+        'free_apis': list(enhanced_news_manager.free_apis.keys()),
+        'premium_apis': {
+            'guardian': bool(enhanced_news_manager.guardian_api_key),
+            'nytimes': bool(enhanced_news_manager.nytimes_api_key),
+            'newsapi': bool(enhanced_news_manager.news_api_key)
+        },
+        'active_sources': list(set(article.get('api_source', 'unknown') for article in enhanced_news_manager.news_cache))
+    }
+    return jsonify(sources)
 
 
-@app.route('/api/news/sources', methods=['POST'])
+# Enhanced API endpoints for intelligent news features
+
+@app.route('/api/news/search')
 @login_required
-def update_news_sources():
-    """API endpoint to update news sources configuration"""
+def search_news():
+    """Advanced news search with filters"""
+    query = request.args.get('q', '')
+    category = request.args.get('category')
+    source = request.args.get('source')
+    date_from = request.args.get('date_from')
+    count = int(request.args.get('count', 20))
+
+    filters = {}
+    if category:
+        filters['category'] = category
+    if source:
+        filters['source'] = source
+    if date_from:
+        filters['date_from'] = date_from
+
+    results = enhanced_news_manager.search_articles(query, filters)[:count]
+
+    return jsonify({
+        'query': query,
+        'filters': filters,
+        'total_results': len(results),
+        'articles': results
+    })
+
+@app.route('/api/news/topics')
+@login_required
+def get_user_topics():
+    """Get user-defined topics"""
+    return jsonify(enhanced_news_manager.user_topics)
+
+@app.route('/api/news/topics', methods=['POST'])
+@login_required
+def create_topic():
+    """Create a new custom topic"""
     try:
-        new_sources = request.json
-        news_manager.news_sources = new_sources
-        
-        # Save to file
-        with open('news_sources.json', 'w') as f:
-            json.dump(new_sources, f, indent=2)
-        
-        return jsonify({'status': 'success', 'message': 'News sources updated'})
+        data = request.json
+        name = data.get('name')
+        keywords = data.get('keywords', [])
+        sources = data.get('sources', [])
+        priority = data.get('priority', 1.0)
+
+        if not name or not keywords:
+            return jsonify({'status': 'error', 'message': 'Name and keywords required'}), 400
+
+        message = enhanced_news_manager.add_custom_topic(name, keywords, sources, priority)
+        return jsonify({'status': 'success', 'message': message})
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/api/news/topics/<topic_name>')
+@login_required
+def get_topic_articles(topic_name):
+    """Get articles for a specific topic"""
+    count = int(request.args.get('count', 20))
+    articles = enhanced_news_manager.get_topic_articles(topic_name, count)
+
+    return jsonify({
+        'topic': topic_name,
+        'total_articles': len(articles),
+        'articles': articles
+    })
+
+@app.route('/api/news/trending')
+@login_required
+def get_trending_topics():
+    """Get trending topics analysis"""
+    days = int(request.args.get('days', 7))
+    trending = enhanced_news_manager.get_trending_topics(days)
+
+    return jsonify({
+        'period_days': days,
+        'trending_topics': trending
+    })
+
+@app.route('/api/news/analytics')
+@login_required
+def get_news_analytics():
+    """Get news analytics and insights"""
+    articles = enhanced_news_manager.news_cache
+
+    # Basic analytics
+    analytics = {
+        'total_articles': len(articles),
+        'sources_breakdown': {},
+        'categories_breakdown': {},
+        'sentiment_breakdown': {'positive': 0, 'negative': 0, 'neutral': 0},
+        'hourly_distribution': {},
+        'top_keywords': []
+    }
+
+    # Source distribution
+    for article in articles:
+        source = article.get('api_source', 'unknown')
+        analytics['sources_breakdown'][source] = analytics['sources_breakdown'].get(source, 0) + 1
+
+    # Category distribution
+    for article in articles:
+        category = article.get('category', 'general')
+        analytics['categories_breakdown'][category] = analytics['categories_breakdown'].get(category, 0) + 1
+
+    # Sentiment distribution
+    for article in articles:
+        sentiment = article.get('sentiment', {}).get('label', 'neutral')
+        analytics['sentiment_breakdown'][sentiment] += 1
+
+    return jsonify(analytics)
 
 
 # run server
 def start_server():
     serve(app, host=HOST, port=PORT)
+
+
+# Security headers and CSRF cookie for AJAX clients
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    try:
+        token = generate_csrf()
+        response.set_cookie(
+            'csrf_token', token,
+            httponly=False,
+            samesite='Lax',
+            secure=app.config['SESSION_COOKIE_SECURE']
+        )
+    except Exception:
+        pass
+    return response
 
 if __name__ == '__main__':
     start_server()

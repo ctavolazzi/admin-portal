@@ -1,0 +1,52 @@
+{
+  "technology": {
+    "keywords": [
+      "AI",
+      "machine learning",
+      "blockchain",
+      "crypto",
+      "programming"
+    ],
+    "sources": [
+      "hackernews",
+      "github",
+      "techcrunch"
+    ],
+    "priority": 1.0,
+    "created": "2025-07-23T10:41:48.245805",
+    "alerts": true
+  },
+  "business": {
+    "keywords": [
+      "startup",
+      "funding",
+      "IPO",
+      "market",
+      "economy"
+    ],
+    "sources": [
+      "guardian",
+      "nytimes",
+      "reuters"
+    ],
+    "priority": 0.8,
+    "created": "2025-07-23T10:41:48.245852",
+    "alerts": false
+  },
+  "science": {
+    "keywords": [
+      "research",
+      "discovery",
+      "climate",
+      "space",
+      "health"
+    ],
+    "sources": [
+      "guardian",
+      "nytimes"
+    ],
+    "priority": 0.6,
+    "created": "2025-07-23T10:41:48.245858",
+    "alerts": false
+  }
+}

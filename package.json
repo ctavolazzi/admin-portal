@@ -1,0 +1,10 @@
+{
+  "name": "admin-portal",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix apps/frontend run dev",
+    "build": "npm --prefix apps/frontend run build",
+    "preview": "npm --prefix apps/frontend run preview"
+  }
+}

@@ -1,33 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# author: Madhav (https://github.com/madhav-mknc)
+# Simplified launcher aligning with Poetry-based setup
 
-
-from os import system as cmd
-
-# run app.py
 def main():
     print("[booting...]")
     from app import start_server
     print("[GOING ONLINE...]")
     start_server()
 
-# install dependencies
-def install(err):
-    print("[error]",err)
-    print("[*] Installing the Requirements")
-    cmd("pip install -r requirements.txt")
-    
-# mains
 if __name__ == "__main__":
     try:
         main()
-    except ModuleNotFoundError as e:
-        install(e)
     except KeyboardInterrupt:
         print("\n[exitted]")
 
 
 
-        
+
 

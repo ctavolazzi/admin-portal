@@ -1,82 +1,175 @@
-# admin-portal
-Admin dashboard for managing data for AI-chatbot
+# 🚀 Admin Portal
 
+A clean, lightweight admin dashboard for file management and news aggregation. Built with Flask and Poetry for modern Python dependency management.
 
-# Project Development Details
+## ✨ Features
 
-## Project Description
-This project is an Admin Portal for managing data for an AI chatbot. It allows administrators to log in, upload, and delete files. The application is built using Flask, a popular Python web framework, and it provides a simple web interface to interact with the chatbot's data.
+### 🔐 **Admin Authentication**
+- Secure login system with hashed passwords
+- Session-based authentication
+- Simple user management via JSON config
 
-## Prerequisites
-Before running the application, ensure the following prerequisites are met:
+### 📁 **File Management**
+- Upload multiple files (txt, pdf, doc, docx, csv)
+- Simple file storage in `uploads/` directory
+- File deletion with confirmation
+- URL content extraction and saving
 
-1. Python 3.x is installed on the system.
-2. Required Python packages are installed. You can install them using `pip install -r requirements.txt`.
-3. The environment variables `FLASK_SECRET_KEY` and any other required variables should be set.
+### 📰 **News Dashboard**
+- Real-time news aggregation from multiple sources
+- RSS feeds (TechCrunch, BBC, Reuters, etc.)
+- Financial data (stocks, market info)
+- Social media integration (Reddit, Twitter)
+- Responsive, modern UI
 
-## Project Structure
-The project consists of the following files:
+### 🌐 **Web Scraping**
+- Extract text content from any URL
+- Clean HTML parsing with BeautifulSoup
+- Automatic content saving
 
-0. `main.py`: The man program script. Starting point.
-1. `app.py`: The main Flask application file containing the server logic.
-2. `admin_users.json`: A JSON file containing a list of admin users' credentials.
-3. `client_secret.json`: A JSON file containing Google Drive API keys and credentials. (Get it from here [https://console.cloud.google.com/])
-4. `.stored_files.json`: A JSON file used for attaining Data transparency, this file is kept in synced with the pinecone vector database. (maintained by the `manage_vectordb.py`)
-5. `utils.py`: Utilites / helper functions for `app.py`
-6. `manage_vectordb.py`: Module for managing the data on Pinecone vector database. Also a standalone script for testing the database.
+## 🚀 Quick Start
 
-## Installation and Setup
-1. Clone the repository from GitHub.
+### Prerequisites
+- Python 3.10+
+- Poetry (for dependency management)
 
-```(bash)
-git clone https://github.com/madhav-mknc/admin-portal
-cd https://github.com/madhav-mknc/admin-portal
-```
-2. Install the required dependencies using:
-```(bash)
-pip install -r requirements.txt
-```
-3. Set the environment variable `FLASK_SECRET_KEY` to a strong random key for session management and security. **Note:** In a production environment, ensure this key is kept secret and not hard-coded.
-4. Ensure the `admin_users.json` file contains valid admin user credentials.
-5. Set all the required env variables mentioned in ".env" file.
-
-## How to Run
-- To start the Flask server, run the `start_server()` function in the `app.py` file. The server will run on `http://0.0.0.0:80/` and listen to incoming requests.
+### Installation
 
 ```bash
-python app.py
+# Clone the repository
+git clone <repo-url>
+cd admin-portal
+
+# Start the application (auto-installs dependencies)
+./run.sh
 ```
-or 
+
+**That's it!** The application will be available at http://localhost:8080
+
+### Manual Setup (Alternative)
+
 ```bash
-python main.py
+# Install dependencies
+poetry install
+
+# Create environment file
+cp .env.example .env
+
+# Start the application
+poetry run python start.py
 ```
 
-- For testing QnA: Open another command line in the same directory and follow the following commands:
-```(bash)
-python manage_vectordb.py
+## 🔧 Configuration
+
+### Admin Users
+Edit `admin_users.json` to manage admin accounts:
+
+```json
+[
+  {
+    "username": "admin1",
+    "password": "1234"
+  }
+]
 ```
 
-    * ".stats" is a command short for index.describe_index_stats()
-    * ".reset_index" is for resetting the index by deleting and creating a new one.
+### Environment Variables (Optional)
+Copy `.env.example` to `.env` and configure:
 
-## Routes
-The Flask application exposes the following routes:
+- `FLASK_SECRET_KEY` - Required for sessions
+- `NEWS_API_KEY` - For enhanced news features
+- `REDDIT_CLIENT_ID/SECRET` - For Reddit integration
+- Other API keys for extended functionality
 
-1. `/`: The homepage of the Admin Portal.
-2. `/login`: The login page for administrators to authenticate themselves.
-3. `/dashboard`: The main dashboard page where administrators can see the uploaded files and manage them.
-4. `/uploads/<filename>`: A route to serve uploaded files directly from the server.
-5. `/upload`: A route to upload files to the server.
-6. `/upload_google_drive`: A route for uploading files from Google Drive.
-7. `/handle_url`: A route for fetching data using a URL.
-6. `/delete/<filename>`: A route to delete uploaded files from the server.
-7. `/logout`: A route to log out and clear the authenticated session.
-8. `/chatbot`: Redirect to chatbot.
+## 📱 Usage
 
-## Important Notes
-1. The project uses Flask's built-in session management to store the authenticated status, which is not suitable for production environments. In a real-world application, consider using a more robust session management solution.
-2. The `allowed_file()` function allows only specific file types (txt, pdf, doc, docx, csv) to be uploaded. Modify the `ALLOWED_EXTENSIONS` set to include additional file types if required.
-3. In a production environment, it's crucial to ensure secure file uploads to prevent any potential security risks.
+1. **Login**: Use `admin1` / `1234` (default)
+2. **Upload Files**: Drag & drop or browse files
+3. **Extract from URLs**: Paste any URL to extract content
+4. **View News**: Real-time news dashboard
+5. **Manage Files**: View and delete uploaded files
 
-## License
-This project is licensed under the [MIT License](LICENSE). Feel free to use and modify it according to your needs.
+## 🛠️ Development
+
+### Project Structure
+```
+admin-portal/
+├── app.py              # Main Flask application
+├── start.py            # Startup script
+├── run.sh              # Setup & run script
+├── pyproject.toml      # Poetry dependencies
+├── utils/
+│   ├── file_utils.py   # File & auth utilities
+│   └── news_manager.py # News aggregation
+├── templates/          # HTML templates
+├── static/            # CSS, JS assets
+└── uploads/           # File storage
+```
+
+### Adding Dependencies
+```bash
+poetry add package-name
+```
+
+### Development Tools
+```bash
+# Code formatting
+poetry run black .
+
+# Linting
+poetry run flake8
+
+# Tests
+poetry run pytest
+```
+
+## 🎯 What's Different
+
+This is a **simplified, focused version** that removes heavy AI/ML dependencies:
+
+### ❌ **Removed:**
+- LangChain (AI processing)
+- Pinecone (vector database)
+- OpenAI API integration
+- AI chatbot functionality
+- Complex document processing
+
+### ✅ **Kept:**
+- Clean file management
+- News aggregation
+- Web scraping
+- Admin authentication
+- Modern UI/UX
+
+## 🚀 Deployment
+
+### Production Setup
+1. Set strong `FLASK_SECRET_KEY` in `.env`
+2. Update admin passwords in `admin_users.json`
+3. Configure reverse proxy (nginx)
+4. Use gunicorn or waitress for production serving
+
+### Docker (Optional)
+```dockerfile
+FROM python:3.10-slim
+WORKDIR /app
+COPY . .
+RUN pip install poetry && poetry install --no-dev
+CMD ["poetry", "run", "python", "start.py"]
+```
+
+## 📄 License
+
+MIT License - feel free to use and modify as needed.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+---
+
+**Enjoy your clean, fast admin portal! 🎉**
